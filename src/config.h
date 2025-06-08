@@ -30,6 +30,7 @@ constexpr char SWITCH_ID[] = "682481e9bddfc53e33f50cb1";
 
 //pilot
 #define RF_RECEIVER_PIN 27
+constexpr unsigned long REMOTE_TOGGLE_CODE = 606175806;
 
 //inne
 constexpr int pulseLimit = 1620;
@@ -46,21 +47,14 @@ extern int lastEncoderValue;
 extern int adjustedPulseLimit;
 extern unsigned long motorStopTime;
 extern Preferences preferences;
-
 extern volatile int encoderPulseCount;
 extern bool motorRunning;
-extern bool gateOpen;
+extern bool gateState;
 extern bool movementCompleted;
 extern bool direction;
 extern bool sinricProConnected;
 extern int manualMovementPulses;
 extern int lastPulseCount;
-extern bool sinricProConnected;
-extern bool manualMovementEnabled;
-extern unsigned long lastEncoderChangeTime;
-extern int lastEncoderValue;
-extern int adjustedPulseLimit;
-extern unsigned long motorStopTime;
-
+extern portMUX_TYPE mux;
 extern Adafruit_SSD1306 display;
 #endif

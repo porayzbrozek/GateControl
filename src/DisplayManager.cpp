@@ -4,17 +4,13 @@
 #include "Config.h"
 #include <WiFi.h> 
 
-// Externy
-extern Adafruit_SSD1306 display;
-extern volatile int encoderPulseCount;
-extern bool motorRunning;
-extern bool gateOpen;
-extern bool sinricProConnected;
-extern bool direction;
-extern int manualMovementPulses;
-extern portMUX_TYPE mux;
 
 void updateDisplay() {
+  //zabezpieczenie przed zbyt częstym odswiezaniem oleda
+  static unsigned long lastUpdate = 0;
+  if (millis() - lastUpdate < 100) return;  
+  lastUpdate = millis();
+
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
@@ -41,7 +37,7 @@ void updateDisplay() {
   if (motorRunning) {
     display.println(direction ? "Zamykanie..." : "Otwieranie...");
   } else {
-    display.println(gateOpen ? "Otwarta" : "Zamknieta");
+    display.println(gateState ? "Otwarta" : "Zamknieta");
   }
 
   display.setCursor(0, 30);
@@ -52,6 +48,8 @@ void updateDisplay() {
   portEXIT_CRITICAL(&mux);
   int remaining = max(0, adjustedPulseLimit - currentCount);
   display.println(remaining);
+
+  //liczba wykonanych obrotow walu silnika
   // display.print("   n:");
   // display.println(abs(encoderPulseCount/77));
 

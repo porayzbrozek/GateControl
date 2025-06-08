@@ -1,21 +1,8 @@
 #include "GateMotor.h"
 #include "Config.h"
-#include <Preferences.h>
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
 #include "ConnectivityManager.h"
-
-extern volatile int encoderPulseCount;
-extern bool motorRunning;
-extern bool gateOpen;
-extern bool movementCompleted;
-extern bool direction;
-extern int manualMovementPulses;
-extern int lastPulseCount;
-
-extern Preferences preferences;
-extern Adafruit_SSD1306 display;
-extern portMUX_TYPE mux;
 
 
 void stopMotor(bool closing) {
@@ -29,10 +16,13 @@ void stopMotor(bool closing) {
     
     if (closing) {
       analogWrite(L_PWM, currentPWM);
-    } else {
+    } 
+    else {
       analogWrite(R_PWM, currentPWM);
     }
+
     unsigned long start = millis();
+
     while (millis() - start < stepDelay) {
       yield(); 
     }
@@ -45,8 +35,16 @@ void stopMotor(bool closing) {
 
   motorRunning = false;
   movementCompleted = true;
-  gateOpen = !closing;
+  gateState = !closing;
+  direction = closing;
+
+  preferences.begin("motor", false);
+  preferences.putBool("gateState", gateState);
+  preferences.putBool("direction", direction);
+  preferences.putBool("completed", true);
+  preferences.end();
 }
+
 
 void softStart(bool closing) {
   digitalWrite(R_EN, HIGH);
@@ -59,19 +57,24 @@ void softStart(bool closing) {
   direction = closing;
 
 for (int pwm = 0; pwm <= pwmValue; pwm += 1) {
+  
   if (closing) {
     analogWrite(R_PWM, 0);
     analogWrite(L_PWM, pwm);
-  } else {
+  } 
+  else {
     analogWrite(R_PWM, pwm);
     analogWrite(L_PWM, 0);
   }
+
   unsigned long start = millis();
+
   while (millis() - start < 15) {
     yield();
   }
 }
 }
+
 
 void moveGate(bool closing) {
   manualMovementEnabled = false;
@@ -93,12 +96,17 @@ void moveGate(bool closing) {
 
   adjustedPulseLimit = pulseLimit - abs(manualOffset);
   
-  bool brakingPhase = (adjustedPulseLimit < 180); 
-
-  softStart(closing);
-
+  //jesli ruch bedzie bardzo krotki – nie startuj z pelna moca, tylko od razu wejdz w tryb hamowania (softstop)
+  bool brakingPhase;
+  if (adjustedPulseLimit < 180) {
+  brakingPhase = true;
+} else {
+  brakingPhase = false;
+}
   const int brakingStart = adjustedPulseLimit * 0.82;
   bool movementStopped = false;
+
+  softStart(closing);
 
   while (!movementStopped) {
     int currentCount;
@@ -110,35 +118,35 @@ void moveGate(bool closing) {
       lastEncoderValue = currentCount;
       lastEncoderChangeTime = millis();
     } 
-else if (motorRunning && (millis() - lastEncoderChangeTime > ENCODER_TIMEOUT)) {
-  stopMotor(closing);
-  updateDisplay();
-  movementStopped = true;
+
+    // zatrzymanie tylko, gdy brak ruchu enkodera przez timeout
+    if (motorRunning && (millis() - lastEncoderChangeTime > ENCODER_TIMEOUT)) {
+      stopMotor(closing);
+      updateDisplay();
+      movementStopped = true;
+      break;
 }
 
-if (brakingPhase || currentCount >= brakingStart) {
-  int remainingDistance = adjustedPulseLimit - currentCount;
+    if (!brakingPhase && currentCount >= brakingStart) {
+      brakingPhase = true;
+}
 
+if (brakingPhase) {
+  int remainingDistance = adjustedPulseLimit - currentCount;
   int dynamicPWM = (remainingDistance > 180) 
       ? map(remainingDistance, 180, adjustedPulseLimit - brakingStart, minPWM, pwmValue) 
       : minPWM;
 
   dynamicPWM = constrain(dynamicPWM, minPWM, pwmValue);
-
   analogWrite(closing ? L_PWM : R_PWM, dynamicPWM);
 }
-
-    updateDisplay();
-
-    if (currentCount >= adjustedPulseLimit) {
-      stopMotor(closing);
-      movementStopped = true;
-    }
-    updateDisplay();
-    delay(10);
+updateDisplay();
+delay(10);
   }
-  updateDisplay();
+
+updateDisplay();
 }
+
 
 void handleMotorStopAftermath() {
   if (motorRunning || millis() - motorStopTime < 5000) return;
@@ -154,6 +162,7 @@ void handleMotorStopAftermath() {
   }
 }
 
+
 void checkManualMovement() {
   if (!manualMovementEnabled) return;
 
@@ -167,22 +176,26 @@ void checkManualMovement() {
     manualMovementPulses += delta;
     lastPulseCount = currentPulseCount;
     
-    if (!motorRunning) {
-      preferences.begin("motor", false);
-      preferences.putInt("manualPulses", manualMovementPulses);
-      preferences.end();
-    }
+  static unsigned long lastSaveTime = 0;
+
+//zabezpieczenie przed zbyt czestym zapisem
+  if (!motorRunning && millis() - lastSaveTime > 3000) {
+  preferences.begin("motor", false);
+  preferences.putInt("manualPulses", manualMovementPulses);
+  preferences.end();
+  lastSaveTime = millis();
+}
     
     if (abs(manualMovementPulses) >= manualThreshold) {
-      gateOpen = !gateOpen;
+      gateState = !gateState;
       manualMovementPulses = 0;
       
       preferences.begin("motor", false);
       preferences.putInt("manualPulses", 0);
-      preferences.putBool("direction", !gateOpen);
+      preferences.putBool("direction", !gateState);
       preferences.end();
 
-      sendGateStateToSinricPro(gateOpen);
+      sendGateStateToSinricPro(gateState);
     }
     
     updateDisplay();

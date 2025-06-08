@@ -4,7 +4,6 @@
 #include "DisplayManager.h"
 #include "ConnectivityManager.h"
 #include "Config.h"
-#include <Preferences.h>
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
 #include <RCSwitch.h>
@@ -13,20 +12,18 @@ Preferences preferences;
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// Zmienne globalne
-
 bool motorRunning = false;
-bool gateOpen = false;
+bool gateState = false;
 bool movementCompleted = true;
 bool direction = false;
 int manualMovementPulses = 0;
 int lastPulseCount = 0;
-
 bool manualMovementEnabled = false;
 unsigned long lastEncoderChangeTime = 0;
 int lastEncoderValue = 0;
 int adjustedPulseLimit = 0;
 unsigned long motorStopTime = 0;
+
 
 void setup() {
   Serial.begin(115200);
@@ -49,7 +46,7 @@ void setup() {
   preferences.end();
 
   if (movementCompleted) {
-    gateOpen = !direction;
+    gateState = preferences.getBool("gateState", false);
     encoderPulseCount = 0;
     manualMovementPulses = 0;
 
@@ -57,8 +54,9 @@ void setup() {
     preferences.putInt("pulseCount", 0);
     preferences.putInt("manualPulses", 0);
     preferences.end();
-  } else {
-    gateOpen = direction;
+  } 
+  else {
+    gateState = preferences.getBool("gateState", false);
   }
 
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -66,17 +64,20 @@ void setup() {
     Serial.println(F("Blad OLED!"));
     while (true);
   }
+
   display.clearDisplay();
   display.display();
 
   if (connectToWiFi()) {
     connectToSinricPro();
   }
+
   setupSinricProCallbacks();
 
   myRemoteSwitch.enableReceive(digitalPinToInterrupt(RF_RECEIVER_PIN));
   updateDisplay();
 }
+
 
 void loop() {
   handleConnectivity();
