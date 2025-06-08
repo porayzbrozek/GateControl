@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
+#include <Adafruit_SSD1306.h>
 
 // Piny mostka H
 constexpr int R_EN = 18;
@@ -27,7 +28,10 @@ constexpr char APP_KEY[] = "859e7ba9-afbf-4881-9956-a668168bb197";
 constexpr char APP_SECRET[] = "d6f280dd-f1d4-481f-8230-75207a82df60-1e86b2d2-6454-4037-9ac0-726be5ac782f";
 constexpr char SWITCH_ID[] = "682481e9bddfc53e33f50cb1";
 
+//pilot
+#define RF_RECEIVER_PIN 27
 
+//inne
 constexpr int pulseLimit = 1620;
 constexpr int manualThreshold = 1500;
 constexpr int pwmValue = 160;
@@ -42,4 +46,21 @@ extern int lastEncoderValue;
 extern int adjustedPulseLimit;
 extern unsigned long motorStopTime;
 extern Preferences preferences;
+
+extern volatile int encoderPulseCount;
+extern bool motorRunning;
+extern bool gateOpen;
+extern bool movementCompleted;
+extern bool direction;
+extern bool sinricProConnected;
+extern int manualMovementPulses;
+extern int lastPulseCount;
+extern bool sinricProConnected;
+extern bool manualMovementEnabled;
+extern unsigned long lastEncoderChangeTime;
+extern int lastEncoderValue;
+extern int adjustedPulseLimit;
+extern unsigned long motorStopTime;
+
+extern Adafruit_SSD1306 display;
 #endif

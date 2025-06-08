@@ -3,6 +3,7 @@
 
 volatile int encoderPulseCount = 0;
 int lastEncoded = 0;
+
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
 void IRAM_ATTR updateEncoder() {

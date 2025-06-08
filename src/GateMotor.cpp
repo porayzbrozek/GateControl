@@ -3,9 +3,7 @@
 #include <Preferences.h>
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
-#include <SinricPro.h>
-#include <SinricProSwitch.h>
-
+#include "ConnectivityManager.h"
 
 extern volatile int encoderPulseCount;
 extern bool motorRunning;
@@ -184,8 +182,7 @@ void checkManualMovement() {
       preferences.putBool("direction", !gateOpen);
       preferences.end();
 
-      SinricProSwitch &mySwitch = SinricPro[SWITCH_ID];
-      mySwitch.sendPowerStateEvent(!gateOpen);
+      sendGateStateToSinricPro(gateOpen);
     }
     
     updateDisplay();

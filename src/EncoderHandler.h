@@ -6,5 +6,6 @@
 void IRAM_ATTR updateEncoder();
 
 extern volatile int encoderPulseCount;
+extern portMUX_TYPE mux;
 
 #endif

@@ -5,6 +5,9 @@
 #include "Config.h"
 #include "GateMotor.h"
 #include <Preferences.h>
+#include <RCSwitch.h>
+
+RCSwitch myRemoteSwitch = RCSwitch();
 
 bool sinricProConnected = false;
 unsigned long lastWiFiCheck = 0;
@@ -91,4 +94,50 @@ bool onPowerState(const String &deviceId, bool &state) {
   preferences.end();
 
   return true;
+}
+
+void handleRemoteControl() {
+  if (myRemoteSwitch.available()) {
+    unsigned long receivedCode = myRemoteSwitch.getReceivedValue();
+
+    if (receivedCode == 606175806) {
+
+      if (!motorRunning) {
+        direction = !gateOpen;
+        moveGate(direction);
+
+        preferences.begin("motor", false);
+        preferences.putBool("direction", direction);
+        preferences.end();
+
+        SinricProSwitch &mySwitch = SinricPro[SWITCH_ID];
+        mySwitch.sendPowerStateEvent(direction);
+      }
+    }
+
+    myRemoteSwitch.resetAvailable();
+  }
+}
+
+
+void sinricProOnConnected() {
+  sinricProConnected = true;
+  Serial.println("SinricPro connected!");
+  updateDisplay(); 
+}
+
+void sinricProOnDisconnected() {
+  sinricProConnected = false;
+  Serial.println("SinricPro disconnected!");
+  updateDisplay(); 
+}
+
+void setupSinricProCallbacks() {
+  SinricPro.onConnected(sinricProOnConnected);
+  SinricPro.onDisconnected(sinricProOnDisconnected);
+}
+
+void sendGateStateToSinricPro(bool isGateOpen) {
+  SinricProSwitch &mySwitch = SinricPro[SWITCH_ID];
+  mySwitch.sendPowerStateEvent(!isGateOpen);
 }

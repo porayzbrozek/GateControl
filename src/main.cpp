@@ -7,19 +7,18 @@
 #include <Preferences.h>
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
-#include <SinricPro.h>
-#include <SinricProSwitch.h>
+#include <RCSwitch.h>
 
 Preferences preferences;
+
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 // Zmienne globalne
-volatile int encoderPulseCount = 0;
+
 bool motorRunning = false;
 bool gateOpen = false;
 bool movementCompleted = true;
 bool direction = false;
-bool sinricProConnected = false;
 int manualMovementPulses = 0;
 int lastPulseCount = 0;
 
@@ -28,9 +27,6 @@ unsigned long lastEncoderChangeTime = 0;
 int lastEncoderValue = 0;
 int adjustedPulseLimit = 0;
 unsigned long motorStopTime = 0;
-
-
-portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
 void setup() {
   Serial.begin(115200);
@@ -76,19 +72,9 @@ void setup() {
   if (connectToWiFi()) {
     connectToSinricPro();
   }
+  setupSinricProCallbacks();
 
-  SinricPro.onConnected([]() {
-    sinricProConnected = true;
-    Serial.println("SinricPro connected!");
-    updateDisplay();
-  });
-
-  SinricPro.onDisconnected([]() {
-    sinricProConnected = false;
-    Serial.println("SinricPro disconnected!");
-    updateDisplay();
-  });
-
+  myRemoteSwitch.enableReceive(digitalPinToInterrupt(RF_RECEIVER_PIN));
   updateDisplay();
 }
 
@@ -96,5 +82,6 @@ void loop() {
   handleConnectivity();
   handleMotorStopAftermath();
   checkManualMovement();
+  handleRemoteControl();
   updateDisplay();
 }
