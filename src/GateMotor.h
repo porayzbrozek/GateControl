@@ -12,8 +12,8 @@ void updateDisplay();
 
 extern volatile int encoderPulseCount;
 extern bool motorRunning;
-extern bool gateState;
+extern bool isGateOpen;
 extern bool movementCompleted;
-extern bool direction;
+
 
 #endif

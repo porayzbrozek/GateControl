@@ -12,18 +12,19 @@ Preferences preferences;
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
+//stany
+bool isGateOpen = false; // isGateOpen == true  → brama OTWARTA // isGateOpen == false → brama ZAMKNIĘTA
 bool motorRunning = false;
-bool gateState = false;
 bool movementCompleted = true;
-bool direction = false;
+bool manualMovementEnabled = false;
+
+//liczniki
 int manualMovementPulses = 0;
 int lastPulseCount = 0;
-bool manualMovementEnabled = false;
 unsigned long lastEncoderChangeTime = 0;
 int lastEncoderValue = 0;
 int adjustedPulseLimit = 0;
 unsigned long motorStopTime = 0;
-
 
 void setup() {
   Serial.begin(115200);
@@ -38,25 +39,23 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(encoderPinA), updateEncoder, CHANGE);
   attachInterrupt(digitalPinToInterrupt(encoderPinB), updateEncoder, CHANGE);
 
-  preferences.begin("motor", false);
-  direction = preferences.getBool("direction", false);
-  encoderPulseCount = preferences.getInt("pulseCount", 0);
-  movementCompleted = preferences.getBool("completed", true);
-  manualMovementPulses = preferences.getInt("manualPulses", 0);
+  preferences.begin("gate", false); //false = read/write, true = read-only
+  movementCompleted = preferences.getBool("movementCompleted", true); //("nazwa_zmiennej", wartosc_domyslna)
+  isGateOpen = preferences.getBool("isGateOpen", false);
+  encoderPulseCount = preferences.getInt("encoderPulseCount", 0);
+  manualMovementPulses = preferences.getInt("manualMovementPulses", 0);
   preferences.end();
 
   if (movementCompleted) {
-    gateState = preferences.getBool("gateState", false);
     encoderPulseCount = 0;
     manualMovementPulses = 0;
 
-    preferences.begin("motor", false);
-    preferences.putInt("pulseCount", 0);
-    preferences.putInt("manualPulses", 0);
+    preferences.begin("gate", false);
+    preferences.putInt("encoderPulseCount", 0);
+    preferences.putInt("manualMovementPulses", 0);
+    preferences.putBool("movementCompleted", true);
+    preferences.putBool("isGateOpen", isGateOpen);
     preferences.end();
-  } 
-  else {
-    gateState = preferences.getBool("gateState", false);
   }
 
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -70,6 +69,7 @@ void setup() {
 
   if (connectToWiFi()) {
     connectToSinricPro();
+    sendGateStateToSinricPro(isGateOpen); 
   }
 
   setupSinricProCallbacks();
@@ -77,7 +77,6 @@ void setup() {
   myRemoteSwitch.enableReceive(digitalPinToInterrupt(RF_RECEIVER_PIN));
   updateDisplay();
 }
-
 
 void loop() {
   handleConnectivity();

@@ -7,7 +7,7 @@
 bool connectToWiFi();
 bool connectToSinricPro();
 void handleConnectivity();
-bool onPowerState(const String &deviceId, bool &state);
+bool handleSinricGateRequest(const String &deviceId, bool &desiredState);
 void handleRemoteControl();
 void sendGateStateToSinricPro(bool isGateOpen);
 void setupSinricProCallbacks();

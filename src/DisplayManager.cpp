@@ -4,9 +4,8 @@
 #include "Config.h"
 #include <WiFi.h> 
 
-
 void updateDisplay() {
-  //zabezpieczenie przed zbyt częstym odswiezaniem oleda
+  // zabezpieczenie przed zbyt czestym odswiezaniem oleda
   static unsigned long lastUpdate = 0;
   if (millis() - lastUpdate < 100) return;  
   lastUpdate = millis();
@@ -35,9 +34,9 @@ void updateDisplay() {
   display.setCursor(0, 20);
   display.print("Brama: ");
   if (motorRunning) {
-    display.println(direction ? "Zamykanie..." : "Otwieranie...");
+    display.println(isGateOpen ? "Zamykanie..." : "Otwieranie...");
   } else {
-    display.println(gateState ? "Otwarta" : "Zamknieta");
+    display.println(isGateOpen ? "Otwarta" : "Zamknieta");
   }
 
   display.setCursor(0, 30);
@@ -48,10 +47,6 @@ void updateDisplay() {
   portEXIT_CRITICAL(&mux);
   int remaining = max(0, adjustedPulseLimit - currentCount);
   display.println(remaining);
-
-  //liczba wykonanych obrotow walu silnika
-  // display.print("   n:");
-  // display.println(abs(encoderPulseCount/77));
 
   display.setCursor(0, 40);
   display.print("impulsy manualne:");
