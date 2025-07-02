@@ -40,10 +40,10 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(encoderPinB), updateEncoder, CHANGE);
 
   preferences.begin("gate", false); //false = read/write, true = read-only
-  movementCompleted = preferences.getBool("movementCompleted", true); //("nazwa_zmiennej", wartosc_domyslna)
+  movementCompleted = preferences.getBool("moveComp", true); //("nazwa_zmiennej", wartosc_domyslna)
   isGateOpen = preferences.getBool("isGateOpen", false);
-  encoderPulseCount = preferences.getInt("encoderPulseCount", 0);
-  manualMovementPulses = preferences.getInt("manualMovementPulses", 0);
+  encoderPulseCount = preferences.getInt("encPulseCnt", 0);
+  manualMovementPulses = preferences.getInt("manMovePuls", 0);
   preferences.end();
 
   if (movementCompleted) {
@@ -51,13 +51,14 @@ void setup() {
     manualMovementPulses = 0;
 
     preferences.begin("gate", false);
-    preferences.putInt("encoderPulseCount", 0);
-    preferences.putInt("manualMovementPulses", 0);
-    preferences.putBool("movementCompleted", true);
+    preferences.putInt("encPulseCnt", 0);
+    preferences.putInt("manMovePuls", 0);
+    preferences.putBool("moveComp", true);
     preferences.putBool("isGateOpen", isGateOpen);
     preferences.end();
   }
 
+  //i2c
   Wire.begin(OLED_SDA, OLED_SCL);
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("Blad OLED!"));
@@ -65,7 +66,7 @@ void setup() {
   }
 
   display.clearDisplay();
-  display.display();
+  display.display(); //bufor -> wyświetlacz
 
   if (connectToWiFi()) {
     connectToSinricPro();
@@ -83,5 +84,6 @@ void loop() {
   handleMotorStopAftermath();
   checkManualMovement();
   handleRemoteControl();
+  WiFiQuality();
   updateDisplay();
 }

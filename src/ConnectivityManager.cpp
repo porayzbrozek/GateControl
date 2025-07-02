@@ -11,6 +11,7 @@ RCSwitch myRemoteSwitch = RCSwitch();
 bool sinricProConnected = false;
 unsigned long lastWiFiCheck = 0;
 unsigned long lastSinricProReconnectAttempt = 0;
+int WiFiSignalQuality = 0;
 
 bool connectToWiFi() {
   if (WiFi.status() == WL_CONNECTED) return true;
@@ -143,5 +144,20 @@ void setupSinricProCallbacks() {
 
 void sendGateStateToSinricPro(bool isGateOpen) {
   SinricProSwitch &mySwitch = SinricPro[SWITCH_ID];
-  mySwitch.sendPowerStateEvent(!isGateOpen); // Wyślij do SinricPro aktualny stan bramy (jeśli w google home false to otwarta)
+  mySwitch.sendPowerStateEvent(!isGateOpen); // Wyślij do SinricPro aktualny stan bramy (w google home false to otwarta)
+}
+
+void WiFiQuality() {
+  static unsigned long lastWiFiCheck = 0;
+
+  if (millis() - lastWiFiCheck > 5000) {
+    long rssi = WiFi.RSSI();
+    WiFiSignalQuality = map(rssi, -100, -50, 0, 100);
+    WiFiSignalQuality = constrain(WiFiSignalQuality, 0, 100);
+    lastWiFiCheck = millis();
+    
+    Serial.print("WiFi Signal Quality: ");
+    Serial.print(WiFiSignalQuality);
+    Serial.println("%");
+  }
 }

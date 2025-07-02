@@ -36,8 +36,15 @@ void stopMotor(bool closing) {
 
   preferences.begin("gate", false);
   preferences.putBool("isGateOpen", isGateOpen);
-  preferences.putBool("movementCompleted", true);
+  preferences.putBool("moveComp", true);
   preferences.end();
+
+Serial.print("Stop: Brama ");
+Serial.println(isGateOpen ? "otwarta" : "zamknieta");
+Serial.print("Wykonane impulsy: ");
+portENTER_CRITICAL(&mux);
+Serial.println(encoderPulseCount);
+portEXIT_CRITICAL(&mux);
 }
 
 void softStart(bool closing) {
@@ -63,6 +70,8 @@ void softStart(bool closing) {
       yield();
     }
   }
+  Serial.print("Start: ");
+Serial.println(closing ? "Zamykanie bramy" : "Otwieranie bramy");
 }
 
 void moveGate(bool closing) {
@@ -79,8 +88,8 @@ void moveGate(bool closing) {
   adjustedPulseLimit = pulseLimit;
 
   preferences.begin("gate", false);
-  int manualOffset = preferences.getInt("manualMovementPulses", 0);
-  preferences.putInt("manualMovementPulses", 0);
+  int manualOffset = preferences.getInt("manMovePuls", 0);
+  preferences.putInt("manMovePuls", 0);
   preferences.end();
 
   adjustedPulseLimit = pulseLimit - abs(manualOffset);
@@ -161,17 +170,22 @@ void checkManualMovement() {
 
     if (!motorRunning && millis() - lastSaveTime > 3000) {
       preferences.begin("gate", false);
-      preferences.putInt("manualMovementPulses", manualMovementPulses);
+      preferences.putInt("manMovePuls", manualMovementPulses);
       preferences.end();
       lastSaveTime = millis();
     }
 
     if (abs(manualMovementPulses) >= manualThreshold) {
       isGateOpen = !isGateOpen;
+
+      
+  Serial.print("Zmiana stanu przez ruch reczny. Brama: ");
+  Serial.println(isGateOpen ? "otwarta" : "zamknieta");
+
       manualMovementPulses = 0;
 
       preferences.begin("gate", false);
-      preferences.putInt("manualMovementPulses", 0);
+      preferences.putInt("manMovePuls", 0);
       preferences.putBool("isGateOpen", isGateOpen);
       preferences.end();
 
@@ -179,5 +193,7 @@ void checkManualMovement() {
     }
 
     updateDisplay();
+    Serial.print("Ruch reczny, impulsy: ");
+    Serial.println(manualMovementPulses);
   }
 }

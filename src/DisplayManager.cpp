@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include "Config.h"
 #include <WiFi.h> 
+#include "ConnectivityManager.h"
 
 void updateDisplay() {
   // zabezpieczenie przed zbyt czestym odswiezaniem oleda
@@ -14,14 +15,11 @@ void updateDisplay() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   
-  long rssi = WiFi.RSSI();
-  int quality = map(rssi, -100, -50, 0, 100);
-  quality = constrain(quality, 0, 100);
 
   display.setCursor(0, 0);
   if (WiFi.status() == WL_CONNECTED) {
     display.print("WiFi: OK  sygnal:");
-    display.print(quality);
+    display.print(WiFiSignalQuality);
     display.println("%");
   } else {
     display.println("WiFi: Brak");

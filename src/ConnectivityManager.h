@@ -11,9 +11,10 @@ bool handleSinricGateRequest(const String &deviceId, bool &desiredState);
 void handleRemoteControl();
 void sendGateStateToSinricPro(bool isGateOpen);
 void setupSinricProCallbacks();
+void WiFiQuality();
 
 extern bool sinricProConnected;
 extern RCSwitch myRemoteSwitch;
-
+extern int WiFiSignalQuality;
 
 #endif
